@@ -5,53 +5,259 @@ import Result from './components/Result';
 import { questions } from './questions';
 import './App.css';
 
-const SCORES_API_URL = 'http://localhost:3001/scores';
-const ACTIVE_GAMES_API_URL = 'http://localhost:3001/activeGames';
+const USE_LOCAL_API = import.meta.env.DEV;
+const LOCAL_SCORES_API_URL = 'http://localhost:3001/scores';
+const LOCAL_ACTIVE_GAMES_API_URL = 'http://localhost:3001/activeGames';
 
 const normalizeName = (value) => value.trim().toLocaleLowerCase('fr-FR');
 
-const sortScores = (entries) =>
+const localSortScores = (entries) =>
   [...entries]
     .sort((a, b) => b.score - a.score || a.time - b.time || a.date.localeCompare(b.date))
     .slice(0, 20);
 
-const sortActiveGames = (entries) =>
+const localSortActiveGames = (entries) =>
   [...entries]
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 
-async function readCollection(url, errorMessage) {
-  const response = await fetch(url);
+async function parseJsonResponse(response, fallbackMessage) {
+  const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(errorMessage);
+    const message = data?.message || fallbackMessage;
+    throw new Error(message);
   }
 
-  return response.json();
+  return data;
 }
 
-async function readScores() {
-  const data = await readCollection(SCORES_API_URL, 'Impossible de charger le classement partagé.');
-  return sortScores(data);
+async function readLocalCollection(url, fallbackMessage) {
+  const response = await fetch(url);
+  return parseJsonResponse(response, fallbackMessage);
 }
 
-async function readActiveGames() {
-  const data = await readCollection(ACTIVE_GAMES_API_URL, 'Impossible de charger les parties en cours.');
-  return sortActiveGames(data);
+async function loadSharedDataRequest() {
+  if (USE_LOCAL_API) {
+    const [scores, activeGames] = await Promise.all([
+      readLocalCollection(LOCAL_SCORES_API_URL, 'Impossible de charger le classement partagé.'),
+      readLocalCollection(LOCAL_ACTIVE_GAMES_API_URL, 'Impossible de charger les parties en cours.'),
+    ]);
+
+    return {
+      scores: localSortScores(scores),
+      activeGames: localSortActiveGames(activeGames),
+    };
+  }
+
+  const response = await fetch('/api/state');
+  return parseJsonResponse(response, 'Impossible de charger le classement partagé.');
 }
 
-async function readParticipantEntries(participantKey, apiUrl, errorMessage) {
-  return readCollection(
-    `${apiUrl}?participantKey=${encodeURIComponent(participantKey)}`,
-    errorMessage,
-  );
+async function startQuizRequest(username) {
+  const cleanName = username.trim();
+  const participantKey = normalizeName(cleanName);
+
+  if (USE_LOCAL_API) {
+    const [existingScores, existingActiveGames] = await Promise.all([
+      readLocalCollection(
+        `${LOCAL_SCORES_API_URL}?participantKey=${encodeURIComponent(participantKey)}`,
+        'Impossible de vérifier ce participant dans le classement.',
+      ),
+      readLocalCollection(
+        `${LOCAL_ACTIVE_GAMES_API_URL}?participantKey=${encodeURIComponent(participantKey)}`,
+        'Impossible de vérifier les parties en cours pour ce participant.',
+      ),
+    ]);
+
+    if (existingScores.length > 0) {
+      return {
+        ok: false,
+        message: 'Ce pseudo a déjà participé au classement partagé. Une seule tentative est autorisée.',
+      };
+    }
+
+    if (existingActiveGames.length > 0) {
+      return {
+        ok: false,
+        message: 'Une partie est déjà en cours avec ce pseudo. Terminez-la avant de recommencer.',
+      };
+    }
+
+    const payload = {
+      participantKey,
+      username: cleanName,
+      currentQuestion: 1,
+      score: 0,
+      elapsed: 0,
+      startedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const response = await fetch(LOCAL_ACTIVE_GAMES_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const activeGame = await parseJsonResponse(response, "Impossible d'ouvrir une partie partagée.");
+    const state = await loadSharedDataRequest();
+
+    return {
+      ok: true,
+      activeGameId: activeGame.id,
+      ...state,
+    };
+  }
+
+  const response = await fetch('/api/start-quiz', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username: cleanName }),
+  });
+
+  if (response.status === 409) {
+    const data = await response.json();
+    return {
+      ok: false,
+      message: data.message,
+      scores: data.scores || [],
+      activeGames: data.activeGames || [],
+    };
+  }
+
+  const data = await parseJsonResponse(response, "Impossible d'ouvrir une partie partagée.");
+
+  return {
+    ok: true,
+    activeGameId: data.activeGame.id,
+    scores: data.scores,
+    activeGames: data.activeGames,
+  };
 }
 
-async function deleteActiveGame(activeGameId) {
+async function updateQuizProgressRequest(activeGameId, progress) {
   if (!activeGameId) return;
 
-  await fetch(`${ACTIVE_GAMES_API_URL}/${activeGameId}`, {
-    method: 'DELETE',
+  if (USE_LOCAL_API) {
+    await fetch(`${LOCAL_ACTIVE_GAMES_API_URL}/${activeGameId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...progress,
+        updatedAt: new Date().toISOString(),
+      }),
+    });
+
+    return;
+  }
+
+  await fetch(`/api/active-games/${activeGameId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(progress),
   });
+}
+
+async function finishQuizRequest(result, activeGameId) {
+  const entry = {
+    ...result,
+    participantKey: normalizeName(result.username),
+    date: new Date().toISOString(),
+  };
+
+  if (USE_LOCAL_API) {
+    const existingScores = await readLocalCollection(
+      `${LOCAL_SCORES_API_URL}?participantKey=${encodeURIComponent(entry.participantKey)}`,
+      'Impossible de vérifier ce participant dans le classement.',
+    );
+
+    if (existingScores.length > 0) {
+      if (activeGameId) {
+        await fetch(`${LOCAL_ACTIVE_GAMES_API_URL}/${activeGameId}`, {
+          method: 'DELETE',
+        });
+      }
+
+      const state = await loadSharedDataRequest();
+
+      return {
+        ok: false,
+        entry: {
+          ...existingScores[0],
+          saveError: 'Ce pseudo a déjà été enregistré dans le classement partagé.',
+        },
+        ...state,
+      };
+    }
+
+    const response = await fetch(LOCAL_SCORES_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(entry),
+    });
+
+    const createdEntry = await parseJsonResponse(response, "Impossible d'enregistrer ce score.");
+
+    if (activeGameId) {
+      await fetch(`${LOCAL_ACTIVE_GAMES_API_URL}/${activeGameId}`, {
+        method: 'DELETE',
+      });
+    }
+
+    const state = await loadSharedDataRequest();
+
+    return {
+      ok: true,
+      entry: createdEntry,
+      ...state,
+    };
+  }
+
+  const response = await fetch('/api/finish-quiz', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username: result.username,
+      score: result.score,
+      time: result.time,
+      activeGameId,
+    }),
+  });
+
+  if (response.status === 409) {
+    const data = await response.json();
+
+    return {
+      ok: false,
+      entry: {
+        ...data.entry,
+        saveError: data.message,
+      },
+      scores: data.scores || [],
+      activeGames: data.activeGames || [],
+    };
+  }
+
+  const data = await parseJsonResponse(response, "Impossible d'enregistrer ce score.");
+
+  return {
+    ok: true,
+    entry: data.entry,
+    scores: data.scores,
+    activeGames: data.activeGames,
+  };
 }
 
 export default function App() {
@@ -64,18 +270,17 @@ export default function App() {
   const [apiError, setApiError] = useState('');
   const [currentActiveGameId, setCurrentActiveGameId] = useState(null);
 
-  const loadSharedData = async () => {
-    const [scoresData, activeGamesData] = await Promise.all([readScores(), readActiveGames()]);
+  const unavailableMessage = USE_LOCAL_API
+    ? "Le classement partagé est indisponible. Lancez `npm run api` pour ouvrir l'API des scores."
+    : "Le classement partagé n'est pas configuré en production. Ajoutez une base Postgres/Neon à Vercel puis redéployez.";
 
-    setScores(scoresData);
-    setActiveGames(activeGamesData);
+  const loadSharedData = async () => {
+    const data = await loadSharedDataRequest();
+    setScores(data.scores);
+    setActiveGames(data.activeGames);
     setScoresStatus('ready');
     setApiError('');
-
-    return {
-      scores: scoresData,
-      activeGames: activeGamesData,
-    };
+    return data;
   };
 
   useEffect(() => {
@@ -83,16 +288,16 @@ export default function App() {
 
     const sync = async () => {
       try {
-        const [scoresData, activeGamesData] = await Promise.all([readScores(), readActiveGames()]);
+        const data = await loadSharedDataRequest();
         if (!isActive) return;
-        setScores(scoresData);
-        setActiveGames(activeGamesData);
+        setScores(data.scores);
+        setActiveGames(data.activeGames);
         setScoresStatus('ready');
         setApiError('');
       } catch (error) {
         if (!isActive) return;
         setScoresStatus('error');
-        setApiError("Le classement partagé est indisponible. Lancez `npm run api` pour ouvrir l'API des scores.");
+        setApiError(error.message || unavailableMessage);
       }
     };
 
@@ -103,77 +308,32 @@ export default function App() {
       isActive = false;
       clearInterval(intervalId);
     };
-  }, []);
+  }, [unavailableMessage]);
 
   const startQuiz = async (name) => {
-    const cleanName = name.trim();
-    const participantKey = normalizeName(cleanName);
-
     try {
-      const [existingScores, existingActiveGames] = await Promise.all([
-        readParticipantEntries(
-          participantKey,
-          SCORES_API_URL,
-          'Impossible de vérifier ce participant dans le classement.',
-        ),
-        readParticipantEntries(
-          participantKey,
-          ACTIVE_GAMES_API_URL,
-          'Impossible de vérifier les parties en cours pour ce participant.',
-        ),
-      ]);
+      const status = await startQuizRequest(name);
 
-      if (existingScores.length > 0) {
-        return {
-          ok: false,
-          message: 'Ce pseudo a déjà participé au classement partagé. Une seule tentative est autorisée.',
-        };
+      if (!status.ok) {
+        if (status.scores) setScores(status.scores);
+        if (status.activeGames) setActiveGames(status.activeGames);
+        return status;
       }
 
-      if (existingActiveGames.length > 0) {
-        return {
-          ok: false,
-          message: 'Une partie est déjà en cours avec ce pseudo. Terminez-la avant de recommencer.',
-        };
-      }
-
-      const activeGamePayload = {
-        participantKey,
-        username: cleanName,
-        currentQuestion: 1,
-        score: 0,
-        elapsed: 0,
-        startedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const response = await fetch(ACTIVE_GAMES_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activeGamePayload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Impossible d'ouvrir une partie partagée.");
-      }
-
-      const createdActiveGame = await response.json();
-      await loadSharedData();
-
-      setCurrentActiveGameId(createdActiveGame.id);
-      setUsername(cleanName);
+      setCurrentActiveGameId(status.activeGameId);
+      setScores(status.scores);
+      setActiveGames(status.activeGames);
+      setUsername(name.trim());
       setApiError('');
       setPage('quiz');
 
       return { ok: true };
     } catch (error) {
-      setApiError("Le classement partagé est indisponible. Lancez `npm run api` pour ouvrir l'API des scores.");
+      setApiError(error.message || unavailableMessage);
 
       return {
         ok: false,
-        message: "Impossible de vérifier le classement partagé pour l'instant. Lancez `npm run api` puis réessayez.",
+        message: error.message || unavailableMessage,
       };
     }
   };
@@ -182,85 +342,29 @@ export default function App() {
     if (!currentActiveGameId) return;
 
     try {
-      await fetch(`${ACTIVE_GAMES_API_URL}/${currentActiveGameId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...progress,
-          updatedAt: new Date().toISOString(),
-        }),
-      });
+      await updateQuizProgressRequest(currentActiveGameId, progress);
     } catch (error) {
       // Le quiz continue même si la mise à jour live échoue.
     }
   };
 
   const endQuiz = async (res) => {
-    const entry = {
-      ...res,
-      participantKey: normalizeName(res.username),
-      date: new Date().toISOString(),
-    };
-
     try {
-      const existingEntries = await readParticipantEntries(
-        entry.participantKey,
-        SCORES_API_URL,
-        'Impossible de vérifier ce participant dans le classement.',
-      );
+      const status = await finishQuizRequest(res, currentActiveGameId);
 
-      if (existingEntries.length > 0) {
-        await deleteActiveGame(currentActiveGameId);
-        setCurrentActiveGameId(null);
-
-        const updated = await loadSharedData();
-        setResult({
-          ...existingEntries[0],
-          saveError: 'Ce pseudo a déjà été enregistré dans le classement partagé.',
-        });
-        setScores(updated.scores);
-        setPage('result');
-        return { ok: false };
-      }
-
-      const response = await fetch(SCORES_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(entry),
-      });
-
-      if (!response.ok) {
-        throw new Error("Impossible d'enregistrer ce score.");
-      }
-
-      const createdEntry = await response.json();
-      await deleteActiveGame(currentActiveGameId);
       setCurrentActiveGameId(null);
-
-      const updated = await loadSharedData();
-      setScores(updated.scores);
-      setActiveGames(updated.activeGames);
-      setResult(createdEntry);
+      setScores(status.scores || []);
+      setActiveGames(status.activeGames || []);
+      setResult(status.entry);
       setPage('result');
 
-      return { ok: true };
+      return { ok: status.ok };
     } catch (error) {
-      await deleteActiveGame(currentActiveGameId);
       setCurrentActiveGameId(null);
-
-      try {
-        await loadSharedData();
-      } catch (loadError) {
-        setScoresStatus('error');
-      }
-
       setResult({
-        ...entry,
-        saveError: "La participation n'a pas pu être enregistrée dans le classement partagé.",
+        ...res,
+        date: new Date().toISOString(),
+        saveError: error.message || "La participation n'a pas pu être enregistrée dans le classement partagé.",
       });
       setPage('result');
       return { ok: false };
@@ -276,7 +380,7 @@ export default function App() {
       await loadSharedData();
     } catch (error) {
       setScoresStatus('error');
-      setApiError("Le classement partagé est indisponible. Lancez `npm run api` pour ouvrir l'API des scores.");
+      setApiError(error.message || unavailableMessage);
     }
   };
 
