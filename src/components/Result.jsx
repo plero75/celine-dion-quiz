@@ -2,7 +2,13 @@ import React from 'react';
 import heroPoster from '../assets/celine-paris-2026-hero.jpg';
 
 export default function Result({ result, onRestart, scores, total }) {
-  const { username, score, time, date } = result;
+  const {
+    username,
+    score,
+    time,
+    date,
+    saveError,
+  } = result;
   const percentage = Math.round((score / total) * 100);
 
   const rank = scores.findIndex(
@@ -79,6 +85,12 @@ export default function Result({ result, onRestart, scores, total }) {
             À score égal, le chrono le plus court passe devant.
           </p>
         </div>
+
+        {saveError && (
+          <div className="result-save-error">
+            <p>{saveError}</p>
+          </div>
+        )}
 
         <div className="leaderboard-panel result-board">
           <div className="leaderboard-heading">

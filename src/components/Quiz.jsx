@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import heroPoster from '../assets/celine-paris-2026-hero.jpg';
 
-export default function Quiz({ questions, username, onFinish }) {
+export default function Quiz({ questions, username, onFinish, onProgress }) {
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -16,6 +16,14 @@ export default function Quiz({ questions, username, onFinish }) {
 
     return () => clearInterval(timerRef.current);
   }, []);
+
+  useEffect(() => {
+    onProgress({
+      currentQuestion: current + 1,
+      score,
+      elapsed,
+    });
+  }, [current, elapsed, onProgress, score]);
 
   const handleSelect = (index) => {
     if (selected !== null) return;

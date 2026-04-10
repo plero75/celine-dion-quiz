@@ -381,6 +381,14 @@ img {
   box-shadow: 0 14px 28px rgba(8, 24, 76, 0.28);
 }
 
+.entry-form button:disabled,
+.restart-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
 .form-note {
   margin-top: 12px;
   color: rgba(24, 17, 20, 0.68);
@@ -390,6 +398,10 @@ img {
   margin-top: 10px;
   color: #a31b3a;
   font-weight: 600;
+}
+
+.panel-error {
+  margin-top: 18px;
 }
 
 .leaderboard-panel {
@@ -436,6 +448,24 @@ img {
 .scoreboard li.current-entry {
   background: rgba(184, 145, 73, 0.16);
   border-color: rgba(184, 145, 73, 0.45);
+}
+
+.live-games-panel {
+  margin-top: 18px;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(79, 136, 255, 0.18);
+  color: #aecdff;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .rank,

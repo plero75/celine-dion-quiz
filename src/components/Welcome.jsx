@@ -4,11 +4,12 @@ import verticalLogo from '../assets/celine-paris-2026-logo-vertical.png';
 import visaLogo from '../assets/visa-logo.png';
 import arenaLogo from '../assets/paris-la-defense-arena-logo.png';
 
-export default function Welcome({ onStart, scores, total }) {
+export default function Welcome({ onStart, scores, activeGames, total, scoresStatus, apiError }) {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const trimmed = username.trim();
@@ -17,7 +18,9 @@ export default function Welcome({ onStart, scores, total }) {
       return;
     }
 
-    const status = onStart(trimmed);
+    setIsSubmitting(true);
+    const status = await onStart(trimmed);
+    setIsSubmitting(false);
 
     if (!status.ok) {
       setError(status.message);
@@ -119,12 +122,15 @@ export default function Welcome({ onStart, scores, total }) {
               }}
               placeholder="Votre prénom ou pseudo"
               maxLength={24}
+              disabled={isSubmitting}
             />
-            <button type="submit">Commencer le quiz</button>
+            <button type="submit" disabled={isSubmitting || scoresStatus === 'loading'}>
+              {isSubmitting ? 'Vérification...' : 'Commencer le quiz'}
+            </button>
           </div>
           <p className="form-note">
             En lançant le quiz, vous confirmez une seule participation et un classement
-            basé sur le score puis le chrono.
+            partagé basé sur le score puis le chrono.
           </p>
           {error && <p className="form-error">{error}</p>}
         </form>
@@ -138,9 +144,15 @@ export default function Welcome({ onStart, scores, total }) {
             <p>Score décroissant, puis temps croissant.</p>
           </div>
 
-          {scores.length === 0 ? (
+          {scoresStatus === 'loading' ? (
             <p className="empty-state">
-              Le classement est vide pour l&apos;instant. Le premier participant donne le ton.
+              Chargement du classement partagé...
+            </p>
+          ) : apiError ? (
+            <p className="form-error panel-error">{apiError}</p>
+          ) : scores.length === 0 ? (
+            <p className="empty-state">
+              Le classement partagé est vide pour l&apos;instant. Le premier participant donne le ton.
             </p>
           ) : (
             <ul className="scoreboard">
@@ -150,6 +162,39 @@ export default function Welcome({ onStart, scores, total }) {
                   <span className="name">{entry.username}</span>
                   <span className="score">{entry.score}/{total}</span>
                   <span className="time">{entry.time}s</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="leaderboard-panel live-games-panel">
+          <div className="leaderboard-heading">
+            <div>
+              <span className="section-tag">Parties en cours</span>
+              <h2>Qui joue en ce moment</h2>
+            </div>
+            <p>Suivi partagé des quiz démarrés.</p>
+          </div>
+
+          {scoresStatus === 'loading' ? (
+            <p className="empty-state">
+              Chargement des parties en cours...
+            </p>
+          ) : apiError ? (
+            <p className="form-error panel-error">{apiError}</p>
+          ) : activeGames.length === 0 ? (
+            <p className="empty-state">
+              Aucune partie en cours pour l&apos;instant.
+            </p>
+          ) : (
+            <ul className="scoreboard live-games-list">
+              {activeGames.map((entry) => (
+                <li key={entry.id}>
+                  <span className="rank live-badge">Live</span>
+                  <span className="name">{entry.username}</span>
+                  <span className="score">Q{entry.currentQuestion}/{total}</span>
+                  <span className="time">{entry.elapsed}s</span>
                 </li>
               ))}
             </ul>
