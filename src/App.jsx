@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Welcome from './components/Welcome';
 import Quiz from './components/Quiz';
 import Result from './components/Result';
@@ -95,6 +96,7 @@ export default function App() {
           />
         )}
       </main>
+      <SpeedInsights />
     </div>
   );
 }
