@@ -23,13 +23,35 @@ export default function Result({ result, onRestart, scores, total }) {
   return (
     <section className="experience result-experience">
       <div className="result-panel">
-        <div className="result-hero">
-          <span className="section-tag">Résultat validé</span>
-          <h1>{getHeadline()}</h1>
-          <p>
-            Votre participation est enregistrée. Le classement final retient d&apos;abord
-            le nombre de bonnes réponses, puis le temps total pour départager les ex aequo.
-          </p>
+        <div className="result-email-card">
+          <a className="result-email-link" href="#top">View Online</a>
+          <div className="result-brand">axs</div>
+          <div className="result-hero">
+            <span className="section-tag">Résultat validé</span>
+            <h1>Vous êtes dans la sélection / You&apos;re in the running</h1>
+          </div>
+
+          <div className="result-light-lines" aria-hidden="true">
+            <span className="line-a" />
+            <span className="line-b" />
+            <span className="line-c" />
+          </div>
+
+          <div className="result-poster-card">
+            <img src={heroPoster} alt="Affiche Celine Dion Paris 2026" />
+          </div>
+
+          <p className="result-scroll-note">Classement provisoire pour les places de Chris</p>
+
+          <div className="result-message-copy">
+            <p className="result-message-title">Félicitations, {username}.</p>
+            <p>
+              Votre participation a bien été prise en compte pour la prévente quiz
+              Céline Dion Paris 2026. Le classement final retient d&apos;abord le nombre
+              de bonnes réponses, puis le temps total pour départager les ex aequo.
+            </p>
+            <p>{getHeadline()}</p>
+          </div>
         </div>
 
         <div className="result-stats">
@@ -93,12 +115,6 @@ export default function Result({ result, onRestart, scores, total }) {
         <button className="restart-btn" onClick={onRestart}>
           Revenir à l&apos;accueil
         </button>
-      </div>
-
-      <div className="result-visual">
-        <div className="result-visual-card">
-          <img src={heroPoster} alt="Affiche Celine Dion Paris 2026" />
-        </div>
       </div>
     </section>
   );
