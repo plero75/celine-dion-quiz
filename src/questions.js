@@ -1,0 +1,22 @@
+export const questions = [
+  { id: 1, question: "En quelle année Céline Dion remporte-t-elle l'Eurovision ?", answers: ["1985", "1988", "1992", "1995"], correct: 1 },
+  { id: 2, question: "Pour quel pays chante-t-elle lors de l'Eurovision ?", answers: ["La France", "Le Canada", "La Suisse", "Le Québec"], correct: 1 },
+  { id: 3, question: "Quel est le titre de la chanson utilisée dans le film Titanic ?", answers: ["Vision of Love", "Because You Loved Me", "My Heart Will Go On", "The Power of Love"], correct: 2 },
+  { id: 4, question: "Quelle est la ville de naissance de Céline Dion ?", answers: ["Montréal", "Québec", "Charlemagne", "Trois-Rivières"], correct: 2 },
+  { id: 5, question: "En quelle année est-elle née ?", answers: ["1965", "1968", "1970", "1972"], correct: 1 },
+  { id: 6, question: "Quel est le titre de son premier album studio en français ?", answers: ["Céline Dion", "La Voix du bon Dieu", "Maman, je veux chanter", "D'amour ou d'amitié"], correct: 1 },
+  { id: 7, question: "Avec quel manager se marie-t-elle plus tard ?", answers: ["Morgan", "René Angélil", "Jean-Jacques Goldman", "Michel Berger"], correct: 1 },
+  { id: 8, question: "Quel est le titre de la chanson avec laquelle elle remporte l'Eurovision ?", answers: ["Pour que tu m'aimes encore", "Ne partez pas sans moi", "D'eux", "Des mots qui sonnent"], correct: 1 },
+  { id: 9, question: "Quel album très vendu est sorti en 1996 ?", answers: ["Falling into You", "Let's Talk About Love", "Taking Chances", "A New Day Has Come"], correct: 0 },
+  { id: 10, question: "Quel album est considéré comme l'un des plus vendus en français ?", answers: ["D'eux", "S'il suffisait d'aimer", "Encore un soir", "Les oiseaux du bonheur"], correct: 0 },
+  { id: 11, question: "Quel surnom lui est souvent donné en raison de sa puissance vocale ?", answers: ["La Reine du Disco", "La Voix du XXe siècle", "La Princesse du Rock", "La Dame de Québec"], correct: 1 },
+  { id: 12, question: "À quel âge rencontre-t-elle René Angélil pour la première fois ?", answers: ["5 ans", "12 ans", "18 ans", "22 ans"], correct: 1 },
+  { id: 13, question: "Quel album emblématique sort après une longue pause, en 2002 ?", answers: ["Miracles", "A New Day Has Come", "One Heart", "Taking Chances"], correct: 1 },
+  { id: 14, question: "Quel est le principal thème de ses grandes ballades ?", answers: ["La fête", "L'amour et la passion", "La politique", "La technologie"], correct: 1 },
+  { id: 15, question: "Quel est le titre de son premier album entièrement anglophone ?", answers: ["Céline Dion", "Unison", "The Colour of My Love", "Let's Talk About Love"], correct: 1 },
+  { id: 16, question: "Quel duo chante-t-elle avec Peabo Bryson pour Disney ?", answers: ["Beauty and the Beast", "A Whole New World", "I'm Your Angel", "Time to Say Goodbye"], correct: 0 },
+  { id: 17, question: "Quelle est la profession de René Angélil quand il rencontre Céline ?", answers: ["Chanteur", "Manager/agent artistique", "Journaliste", "Avocat"], correct: 1 },
+  { id: 18, question: "Quel album très vendu sort en 1993 ?", answers: ["D'eux", "The Colour of My Love", "Falling into You", "Let's Talk About Love"], correct: 1 },
+  { id: 19, question: "Quel titre pop culte sort en 1994 et parle de passion brûlante ?", answers: ["The Power of Love", "Pour que tu m'aimes encore", "Think Twice", "It's All Coming Back to Me Now"], correct: 0 },
+  { id: 20, question: "Quelle chanson sert de bande originale au film 'Up Close & Personal' ?", answers: ["Because You Loved Me", "Beauty and the Beast", "My Heart Will Go On", "It's All Coming Back to Me Now"], correct: 0 }
+];
