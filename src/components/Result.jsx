@@ -1,56 +1,105 @@
 import React from 'react';
+import heroPoster from '../assets/celine-paris-2026-hero.jpg';
 
 export default function Result({ result, onRestart, scores, total }) {
-  const { username, score, time } = result;
-  const percent = Math.round((score / total) * 100);
+  const { username, score, time, date } = result;
+  const percentage = Math.round((score / total) * 100);
 
-  const getMessage = () => {
-    if (percent === 100) return '🏆 Parfait ! Vous êtes un vrai fan !';
-    if (percent >= 75) return '🌟 Très bien ! Vous la connaissez vraiment bien.';
-    if (percent >= 50) return '👍 Pas mal ! Il y a encore des choses à découvrir.';
-    return '🎵 Retournez écouter ses albums pour mieux la connaître !';
+  const rank = scores.findIndex(
+    (entry) =>
+      entry.username === username &&
+      entry.score === score &&
+      entry.time === time &&
+      entry.date === date,
+  ) + 1;
+
+  const getHeadline = () => {
+    if (rank === 1) return 'Vous prenez la tête du classement.';
+    if (rank > 0 && rank <= 3) return 'Très grosse performance, vous êtes parmi les premiers.';
+    if (percentage >= 70) return 'Belle participation, le score est solide.';
+    return 'Participation enregistrée, mais il faudra viser plus haut pour remonter.';
   };
 
-  const myRank = scores.findIndex((s) => s.username === username && s.score === score && s.time === time) + 1;
-
   return (
-    <div className="result">
-      <span className="emoji">🎤</span>
-      <h2>Bravo, {username} !</h2>
-      <p className="message">{getMessage()}</p>
+    <section className="experience result-experience">
+      <div className="result-panel">
+        <div className="result-hero">
+          <span className="section-tag">Résultat validé</span>
+          <h1>{getHeadline()}</h1>
+          <p>
+            Votre participation est enregistrée. Le classement final retient d&apos;abord
+            le nombre de bonnes réponses, puis le temps total pour départager les ex aequo.
+          </p>
+        </div>
 
-      <div className="stats">
-        <div className="stat">
-          <span className="stat-value">{score}/{total}</span>
-          <span className="stat-label">Score</span>
+        <div className="result-stats">
+          <div className="result-stat">
+            <span>Participant</span>
+            <strong>{username}</strong>
+          </div>
+          <div className="result-stat">
+            <span>Score</span>
+            <strong>{score}/{total}</strong>
+          </div>
+          <div className="result-stat">
+            <span>Temps</span>
+            <strong>{time}s</strong>
+          </div>
+          <div className="result-stat">
+            <span>Classement</span>
+            <strong>{rank > 0 ? `#${rank}` : 'En attente'}</strong>
+          </div>
         </div>
-        <div className="stat">
-          <span className="stat-value">{time}s</span>
-          <span className="stat-label">Temps</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">#{myRank || '?'}</span>
-          <span className="stat-label">Classement</span>
-        </div>
-      </div>
 
-      {scores.length > 0 && (
-        <div className="highscores">
-          <h3>🏆 Top 10</h3>
-          <ul>
-            {scores.slice(0, 10).map((h, i) => (
-              <li key={i} className={h.username === username && h.score === score && h.time === time ? 'me' : ''}>
-                <span className="rank">#{i + 1}</span>
-                <span className="name">{h.username}</span>
-                <span className="score">{h.score}/{total}</span>
-                <span className="time">{h.time}s</span>
-              </li>
-            ))}
+        <div className="result-callout">
+          <p>
+            Les premiers du classement sont les gagnants potentiels des places de Chris.
+            À score égal, le chrono le plus court passe devant.
+          </p>
+        </div>
+
+        <div className="leaderboard-panel result-board">
+          <div className="leaderboard-heading">
+            <div>
+              <span className="section-tag">Top participants</span>
+              <h2>Le classement actuel</h2>
+            </div>
+            <p>Une seule participation par personne.</p>
+          </div>
+
+          <ul className="scoreboard">
+            {scores.slice(0, 10).map((entry, index) => {
+              const isCurrent =
+                entry.username === username &&
+                entry.score === score &&
+                entry.time === time &&
+                entry.date === date;
+
+              return (
+                <li
+                  key={`${entry.username}-${entry.time}-${entry.date}`}
+                  className={isCurrent ? 'current-entry' : ''}
+                >
+                  <span className="rank">#{index + 1}</span>
+                  <span className="name">{entry.username}</span>
+                  <span className="score">{entry.score}/{total}</span>
+                  <span className="time">{entry.time}s</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
-      )}
 
-      <button className="restart-btn" onClick={onRestart}>🔄 Recommencer</button>
-    </div>
+        <button className="restart-btn" onClick={onRestart}>
+          Revenir à l&apos;accueil
+        </button>
+      </div>
+
+      <div className="result-visual">
+        <div className="result-visual-card">
+          <img src={heroPoster} alt="Affiche Celine Dion Paris 2026" />
+        </div>
+      </div>
+    </section>
   );
 }
