@@ -1,22 +1,22 @@
 /* Hero visuel Mission 30 Mai : déposer l'image finale dans /public/mission-hero.png */
 .home{
   position:relative;
-  justify-content:flex-end!important;
+  justify-content:flex-start!important;
   min-height:calc(100vh - 54px)!important;
-  padding:12px!important;
+  padding:0 12px 12px!important;
   background-image:
-    linear-gradient(180deg,rgba(3,8,18,.05) 0%,rgba(3,8,18,.20) 36%,rgba(3,8,18,.88) 72%,rgba(3,8,18,.98) 100%),
+    linear-gradient(180deg,rgba(3,8,18,.04) 0%,rgba(3,8,18,.10) 42%,rgba(3,8,18,.65) 74%,rgba(3,8,18,.96) 100%),
     url('/mission-hero.png');
-  background-size:cover;
+  background-size:100% auto;
   background-position:center top;
   background-repeat:no-repeat;
-  overflow:hidden;
+  overflow:visible;
 }
 .home .crest{display:none!important;}
 .home .introPanel{
   width:min(720px,94vw);
-  margin:min(52vh,430px) auto 10px!important;
-  background:linear-gradient(145deg,rgba(7,18,34,.88),rgba(9,25,48,.76))!important;
+  margin:clamp(300px,56vw,560px) auto 10px!important;
+  background:linear-gradient(145deg,rgba(7,18,34,.92),rgba(9,25,48,.82))!important;
   border:1px solid rgba(255,178,70,.72)!important;
   backdrop-filter:blur(6px);
 }
@@ -46,8 +46,22 @@
 }
 .home nav{max-width:760px;margin-left:auto!important;margin-right:auto!important;}
 @media(max-width:520px){
-  .home{background-position:42% top;}
-  .home .introPanel{margin-top:min(48vh,390px)!important;padding:11px!important;}
+  .home{
+    padding:0 8px 12px!important;
+    background-size:100% auto!important;
+    background-position:center 0!important;
+    min-height:auto!important;
+  }
+  .home .introPanel{
+    margin-top:58vw!important;
+    width:96vw!important;
+    padding:10px!important;
+    border-radius:12px!important;
+  }
+  .home .introPanel h2{font-size:28px!important;}
+  .home .introPanel p{font-size:13px!important;line-height:1.12!important;margin:5px auto!important;}
   .home .introPanel p:nth-of-type(2),
   .home .introPanel p:nth-of-type(3){display:none;}
+  .home .teamrow .medal{width:54px!important;height:54px!important;flex-basis:54px!important;}
+  .home .gold{font-size:27px!important;padding:14px!important;width:96vw!important;}
 }
