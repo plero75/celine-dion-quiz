@@ -19,6 +19,19 @@
     <link rel="stylesheet" href="/mission-hero.css" />
   </head>
   <body>
+    <script>
+      (function(){
+        var params = new URLSearchParams(window.location.search);
+        if(params.get('unlock') === '1'){
+          localStorage.setItem('brigade30mai', JSON.stringify({ rose: 320, gustave: 320, jacques: 320 }));
+          sessionStorage.removeItem('mission30-victory-played-v1');
+        }
+        if(params.get('reset') === '1'){
+          localStorage.removeItem('brigade30mai');
+          sessionStorage.removeItem('mission30-victory-played-v1');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script>
       (function(){
