@@ -34,6 +34,38 @@
       })();
     </script>
     <div id="root"></div>
+    <script>
+      (function(){
+        function playVictory(){
+          var audio = new Audio('/victory.mp3');
+          audio.volume = 0.95;
+          audio.play().catch(function(){});
+        }
+        function sparkleLayer(){
+          return '<div class="sparkleLayer"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+        }
+        function installFinalReveal(){
+          var panels = Array.prototype.slice.call(document.querySelectorAll('.panel.final'));
+          panels.forEach(function(panel){
+            if(panel.dataset.finalReady === '1') return;
+            var text = panel.innerText || '';
+            if(text.indexOf('Surprise de Tonton Paul') === -1) return;
+            panel.dataset.finalReady = '1';
+            panel.classList.add('finalReady');
+            panel.innerHTML = sparkleLayer() + '<div class="bigChest pulse">🎁</div><h2>Le coffre est prêt !</h2><p>La Brigade a réussi. Appuyez pour ouvrir le coffre final et découvrir la surprise de Tonton Paul.</p><button class="gold js-open-final" type="button">Ouvrir le coffre</button>';
+            var btn = panel.querySelector('.js-open-final');
+            btn.addEventListener('click', function(){
+              playVictory();
+              panel.classList.remove('finalReady');
+              panel.classList.add('finalReveal');
+              panel.innerHTML = sparkleLayer() + '<div class="confetti">✦ ✨ ★ ✨ ✦</div><h2>Surprise !</h2><div class="revealHero"></div><p class="revealText">Vivez tous ensemble la finale de ce soir sur écran géant au Parc des Princes.</p><div class="ticketBox"><b>Rendez-vous</b><strong>Samedi 30 mai</strong><span>La Brigade au complet</span></div>';
+            });
+          });
+        }
+        new MutationObserver(installFinalReveal).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+        window.addEventListener('load', function(){ setTimeout(installFinalReveal, 500); });
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
