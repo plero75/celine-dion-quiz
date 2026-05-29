@@ -1,1 +1,53 @@
-/* placeholder */
+/* Hero visuel Mission 30 Mai : déposer l'image finale dans /public/mission-hero.png */
+.home{
+  position:relative;
+  justify-content:flex-end!important;
+  min-height:calc(100vh - 54px)!important;
+  padding:12px!important;
+  background-image:
+    linear-gradient(180deg,rgba(3,8,18,.05) 0%,rgba(3,8,18,.20) 36%,rgba(3,8,18,.88) 72%,rgba(3,8,18,.98) 100%),
+    url('/mission-hero.png');
+  background-size:cover;
+  background-position:center top;
+  background-repeat:no-repeat;
+  overflow:hidden;
+}
+.home .crest{display:none!important;}
+.home .introPanel{
+  width:min(720px,94vw);
+  margin:min(52vh,430px) auto 10px!important;
+  background:linear-gradient(145deg,rgba(7,18,34,.88),rgba(9,25,48,.76))!important;
+  border:1px solid rgba(255,178,70,.72)!important;
+  backdrop-filter:blur(6px);
+}
+.home .introPanel h2{
+  margin:0 0 8px!important;
+  font:900 clamp(28px,8vw,44px)/.9 'Barlow Condensed',sans-serif!important;
+  color:#ffd27a!important;
+  text-transform:uppercase;
+  text-shadow:0 2px 0 #000;
+}
+.home .introPanel p{
+  max-width:680px!important;
+  margin:7px auto!important;
+  color:#fff1cf!important;
+  font-size:clamp(14px,3.8vw,18px);
+  line-height:1.22;
+  text-shadow:0 2px 8px #000;
+}
+.home .teamrow{margin:8px 0 6px!important;}
+.home .teamrow .medal{width:68px!important;height:68px!important;flex-basis:68px!important;}
+.home .gold{
+  max-width:760px!important;
+  font-size:clamp(26px,8vw,38px)!important;
+  padding:18px!important;
+  border-radius:18px!important;
+  box-shadow:0 0 28px rgba(255,55,65,.45),0 0 24px rgba(45,132,255,.45),inset 0 0 0 2px rgba(255,255,255,.18)!important;
+}
+.home nav{max-width:760px;margin-left:auto!important;margin-right:auto!important;}
+@media(max-width:520px){
+  .home{background-position:42% top;}
+  .home .introPanel{margin-top:min(48vh,390px)!important;padding:11px!important;}
+  .home .introPanel p:nth-of-type(2),
+  .home .introPanel p:nth-of-type(3){display:none;}
+}
