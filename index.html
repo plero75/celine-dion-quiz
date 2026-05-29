@@ -17,6 +17,7 @@
     <meta name="twitter:description" content="Réussissez les missions, débloquez les indices et ouvrez le coffre final." />
     <meta name="twitter:image" content="https://test-ok-three.vercel.app/mission-hero.png" />
     <link rel="stylesheet" href="/mission-hero.css" />
+    <link rel="stylesheet" href="/final-reveal.css" />
   </head>
   <body>
     <script>
@@ -33,27 +34,6 @@
       })();
     </script>
     <div id="root"></div>
-    <script>
-      (function(){
-        var armed = false;
-        var playedKey = 'mission30-victory-played-v1';
-        function arm(){ armed = true; }
-        ['click','touchstart','keydown'].forEach(function(evt){ window.addEventListener(evt, arm, { once:false, passive:true }); });
-        function shouldPlay(){
-          var text = document.body ? document.body.innerText || '' : '';
-          return text.indexOf('Coffre ouvert') !== -1 || text.indexOf('Surprise de Tonton Paul') !== -1;
-        }
-        function playVictory(){
-          if(!armed || sessionStorage.getItem(playedKey) === '1' || !shouldPlay()) return;
-          sessionStorage.setItem(playedKey,'1');
-          var audio = new Audio('/victory.mp3');
-          audio.volume = 0.9;
-          audio.play().catch(function(){ sessionStorage.removeItem(playedKey); });
-        }
-        new MutationObserver(playVictory).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
-        window.addEventListener('load', function(){ setTimeout(playVictory, 500); });
-      })();
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
