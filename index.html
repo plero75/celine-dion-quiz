@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/speed-fix.css" />
     <link rel="stylesheet" href="/bus-fix.css" />
     <style>
-      .mem button img{width:100%;height:100%;object-fit:cover;border-radius:14px;display:block;pointer-events:none}.mem button.memoryImgCard{padding:4px!important;background:linear-gradient(135deg,#102b5c,#061021)!important;border:2px solid rgba(255,210,122,.7)!important;overflow:hidden}.mem button.memoryImgCard:before{content:'';position:absolute;inset:0;border-radius:14px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12);pointer-events:none}.mem button.memoryBack{background:radial-gradient(circle at 50% 20%,#174fa8,#061021)!important;color:#ffd27a!important;font-size:34px!important;border:2px solid rgba(255,210,122,.45)!important}
+      .mem button img{width:100%;height:100%;object-fit:cover;border-radius:14px;display:block;pointer-events:none}.mem button.memoryImgCard{padding:4px!important;background:linear-gradient(135deg,#102b5c,#061021)!important;border:2px solid rgba(255,210,122,.7)!important;overflow:hidden}.mem button.memoryImgCard:before{content:'';position:absolute;inset:0;border-radius:14px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12);pointer-events:none}.mem button.memoryBack{background:radial-gradient(circle at 50% 20%,#174fa8,#061021)!important;color:#ffd27a!important;font-size:34px!important;border:2px solid rgba(255,210,122,.45)!important}.unlockedHero{box-shadow:0 0 50px rgba(255,210,122,.45),inset 0 0 0 2px rgba(255,255,255,.12)!important}.bigOpen,.unlockedCall{font-size:clamp(22px,6vw,38px)!important;padding:18px 20px!important;animation:callToAction 1.1s ease-in-out infinite!important}.compactIntro p{font-size:clamp(16px,4vw,22px)!important;line-height:1.18!important}
     </style>
   </head>
   <body>
@@ -41,7 +41,48 @@
     <div id="root"></div>
     <script>
       (function(){
+        var audioCtx = null;
+        function ctx(){
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          if(audioCtx.state === 'suspended') audioCtx.resume();
+          return audioCtx;
+        }
+        function tone(freq, duration, type, gain, delay){
+          try{
+            var c = ctx();
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = type || 'sine';
+            o.frequency.setValueAtTime(freq, c.currentTime + (delay || 0));
+            g.gain.setValueAtTime(0.0001, c.currentTime + (delay || 0));
+            g.gain.exponentialRampToValueAtTime(gain || 0.08, c.currentTime + (delay || 0) + 0.015);
+            g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + (delay || 0) + duration);
+            o.connect(g); g.connect(c.destination);
+            o.start(c.currentTime + (delay || 0));
+            o.stop(c.currentTime + (delay || 0) + duration + 0.02);
+          }catch(e){}
+        }
+        function sfx(kind){
+          if(kind === 'good'){ tone(660,.09,'triangle',.08,0); tone(990,.12,'triangle',.07,.08); return; }
+          if(kind === 'bad'){ tone(220,.16,'sawtooth',.06,0); tone(140,.18,'sawtooth',.05,.10); return; }
+          if(kind === 'zero'){ tone(180,.12,'square',.07,0); tone(100,.22,'sawtooth',.06,.10); tone(70,.28,'sawtooth',.05,.24); return; }
+          if(kind === 'win'){ tone(523,.12,'triangle',.08,0); tone(659,.12,'triangle',.08,.12); tone(784,.12,'triangle',.08,.24); tone(1046,.28,'triangle',.09,.38); return; }
+          if(kind === 'tap'){ tone(420,.045,'sine',.025,0); return; }
+          tone(360,.06,'sine',.03,0);
+        }
+        window.missionSfx = sfx;
+        document.addEventListener('click', function(e){
+          var el = e.target.closest('button,.crestTarget,.memoryImgCard,.memoryBack');
+          if(!el) return;
+          if(el.classList.contains('psg')) return sfx('good');
+          if(el.classList.contains('arsenal')) return sfx('bad');
+          if(el.classList.contains('om')) return sfx('zero');
+          if(el.classList.contains('js-open-final') || el.classList.contains('bigOpen')) return sfx('win');
+          if(el.classList.contains('gold')) return sfx('good');
+          sfx('tap');
+        }, true);
         function playVictory(){
+          sfx('win');
           var audio = new Audio('/victory.mp3');
           audio.volume = 0.95;
           audio.play().catch(function(){});
@@ -67,36 +108,8 @@
             });
           });
         }
-        function installMemoryImages(){
-          var mem = document.querySelector('.mem');
-          if(!mem) return;
-          var emojis = ['⚽','🏟️','🎟️','🔐','⭐','🏆'];
-          var pool = Array.from({length:10}, function(_,i){ return '/1%20('+(i+1)+').png'; });
-          if(!window.__missionMemoryMap || mem.dataset.memoryMap !== '1'){
-            var chosen = pool.sort(function(){return Math.random()-.5}).slice(0,6);
-            window.__missionMemoryMap = {};
-            emojis.forEach(function(e,i){ window.__missionMemoryMap[e]=chosen[i]; });
-            mem.dataset.memoryMap = '1';
-          }
-          Array.prototype.slice.call(mem.querySelectorAll('button')).forEach(function(btn){
-            var raw = (btn.textContent || '').trim();
-            if(raw === '?'){
-              btn.classList.remove('memoryImgCard');
-              btn.classList.add('memoryBack');
-              btn.innerHTML = '★';
-              return;
-            }
-            var src = window.__missionMemoryMap && window.__missionMemoryMap[raw];
-            if(src && btn.dataset.imgSrc !== src){
-              btn.dataset.imgSrc = src;
-              btn.classList.remove('memoryBack');
-              btn.classList.add('memoryImgCard');
-              btn.innerHTML = '<img src="'+src+'" alt="Carte mémoire" loading="eager" />';
-            }
-          });
-        }
-        new MutationObserver(function(){installFinalReveal();installMemoryImages();}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
-        window.addEventListener('load', function(){ setTimeout(function(){installFinalReveal();installMemoryImages();}, 500); });
+        new MutationObserver(function(){installFinalReveal();}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+        window.addEventListener('load', function(){ setTimeout(function(){installFinalReveal();}, 500); });
       })();
     </script>
     <script type="module" src="/src/main.jsx"></script>
